@@ -7,7 +7,7 @@ cd /d "%~dp0"
 git add .
 git commit -m "Push smart hostel booking system"
 git branch -M main
-git push -u origin main --force
+git -c credential.helper= push -u origin main --force
 
 echo.
 echo ==============================================
