@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}My Bookings{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 class="fw-bold mb-1">My Bookings</h4>
+      <p class="text-secondary small mb-0">Manage your active and past resource reservations.</p>
+    </div>
+    <a href="/#resources" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i> New Booking</a>
+  </div>
+
+  <div class="card p-0">
+    {% if bookings %}
+      <div class="table-responsive">
+        <table class="table align-middle mb-0 text-sm">
+          <thead>
+            <tr>
+              <th class="ps-3">Resource</th>
+              <th>Purpose / Title</th>
+              <th>Start Time</th>
+              <th>End Time</th>
+              <th>Attendees</th>
+              <th>Status</th>
+              <th class="text-end pe-3">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in bookings %}
+              <tr>
+                <td class="ps-3 font-semibold text-dark">{{ b.resource.name }}</td>
+                <td>
+                  <div class="fw-medium">{{ b.title }}</div>
+                  {% if b.description %}
+                    <div class="text-muted small">{{ b.description|truncatechars:35 }}</div>
+                  {% endif %}
+                </td>
+                <td class="small text-secondary">{{ b.start_datetime|date:"M d, Y @ H:i" }}</td>
+                <td class="small text-secondary">{{ b.end_datetime|date:"M d, Y @ H:i" }}</td>
+                <td class="small">{{ b.attendees }}</td>
+                <td>
+                  {% if b.status == 'confirmed' %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">Confirmed</span>
+                  {% elif b.status == 'pending' %}
+                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Pending</span>
+                  {% else %}
+                    <span class="badge bg-light text-secondary border">{{ b.status|title }}</span>
+                  {% endif %}
+                </td>
+                <td class="text-end pe-3">
+                  {% if b.status == 'confirmed' or b.status == 'pending' %}
+                    <button class="btn btn-outline-danger btn-sm py-1 px-2 cancel-btn" data-booking-id="{{ b.id }}">
+                      Cancel
+                    </button>
+                  {% else %}
+                    <span class="text-muted small">&mdash;</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-center py-5 text-secondary">
+        <i class="bi bi-inbox fs-3 d-block mb-2 text-muted"></i>
+        <h6>No reservations found</h6>
+        <p class="small text-muted mb-3">You haven't made any resource bookings yet.</p>
+        <a href="/#resources" class="btn btn-outline-primary btn-sm">Browse Resources</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    function getCookie(name) {
+      let v = null;
+      if (document.cookie) {
+        document.cookie.split(';').forEach(c => {
+          c = c.trim();
+          if (c.startsWith(name + '=')) v = decodeURIComponent(c.substring(name.length + 1));
+        });
+      }
+      return v;
+    }
+
+    document.querySelectorAll('.cancel-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const bId = e.currentTarget.getAttribute('data-booking-id');
+        if (!confirm('Are you sure you want to cancel this booking?')) return;
+        try {
+          const res = await fetch(`/api/bookings/${bId}/cancel/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCookie('csrftoken') || ''
+            },
+            body: JSON.stringify({ reason: 'Cancelled by user' })
+          });
+          if (res.ok) {
+            alert('Booking cancelled.');
+            location.reload();
+          } else {
+            const err = await res.json();
+            alert('Error: ' + (err.detail || JSON.stringify(err)));
+          }
+        } catch (err) {
+          alert('Error: ' + err.message);
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

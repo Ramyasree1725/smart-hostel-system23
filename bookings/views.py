@@ -29,6 +29,8 @@ class BookingViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = Booking.objects.select_related('resource', 'user', 'resource__category')
         user = self.request.user
+        if not user.is_authenticated:
+            return qs.filter(resource__is_public=True)
         if not (user.is_staff or getattr(user, 'is_admin_role', False)):
             qs = qs.filter(user=user)
         return qs
@@ -83,14 +85,15 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking.save()
         return Response(BookingSerializer(booking, context={'request': request}).data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
     def calendar(self, request):
         """Return bookings for FullCalendar (start/end query params)."""
         start = request.query_params.get('start')
         end = request.query_params.get('end')
         resource_id = request.query_params.get('resource')
-        qs = self.get_queryset().filter(
+        qs = Booking.objects.select_related('resource', 'user').filter(
             status__in=[Booking.Status.CONFIRMED, Booking.Status.PENDING],
+            resource__is_public=True,
         )
         if start:
             qs = qs.filter(end_datetime__gte=start)
@@ -107,7 +110,7 @@ class BookingViewSet(viewsets.ModelViewSet):
                 'end': b.end_datetime.isoformat(),
                 'status': b.status,
                 'resourceId': b.resource_id,
-                'color': '#3B82F6' if b.status == Booking.Status.CONFIRMED else '#F59E0B',
+                'color': '#2563EB' if b.status == Booking.Status.CONFIRMED else '#D97706',
                 'extendedProps': {
                     'description': b.description,
                     'user': b.user.get_full_name() or b.user.username,
@@ -115,7 +118,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             })
         return Response(events)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
     def available_slots(self, request):
         resource_id = request.query_params.get('resource')
         date_str = request.query_params.get('date')
@@ -128,3 +131,13 @@ class BookingViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'Invalid resource or date'}, status=400)
         slots = get_available_slots(resource, d)
         return Response({'resource': resource.slug, 'date': date_str, 'slots': slots})
+
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def my_bookings_view(request):
+    bookings = Booking.objects.filter(user=request.user).select_related('resource').order_by('-start_datetime')
+    return render(request, 'bookings/my_bookings.html', {'bookings': bookings})
+

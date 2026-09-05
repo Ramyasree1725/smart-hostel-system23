@@ -84,13 +84,14 @@ DATABASES = {
 }
 
 # Fallback to SQLite for local demo when Postgres is unavailable
-if os.getenv('USE_SQLITE', 'False').lower() in ('true', '1', 'yes'):
+if os.getenv('USE_SQLITE', 'True').lower() in ('true', '1', 'yes'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

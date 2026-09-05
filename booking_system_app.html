@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BookSpace.io &mdash; Enterprise Facility Booking Platform</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    /* Rich Chocolate Brown Custom Utility Classes */
+    .bg-brown-900 { background-color: #3d1e09; }
+    .bg-brown-800 { background-color: #582f0e; }
+    .bg-brown-700 { background-color: #7f4f24; }
+    .bg-brown-100 { background-color: #f7f0e9; }
+    .bg-brown-50 { background-color: #fcf9f5; }
+    
+    .text-brown-900 { color: #3d1e09; }
+    .text-brown-800 { color: #582f0e; }
+    .text-brown-700 { color: #7f4f24; }
+    
+    .border-brown-800 { border-color: #582f0e; }
+    .border-brown-300 { border-color: #c9b097; }
+    .border-brown-200 { border-color: #e6ccb2; }
+
+    .hover\:bg-brown-900:hover { background-color: #3d1e09; }
+    .hover\:bg-brown-800:hover { background-color: #582f0e; }
+    .hover\:bg-brown-100:hover { background-color: #f7f0e9; }
+  </style>
+</head>
+<body class="bg-brown-50 text-stone-900 min-h-screen flex flex-col antialiased w-full">
+
+  <!-- Header Navigation (Rich Chocolate Brown Theme) -->
+  <header class="bg-white border-b border-brown-200 sticky top-0 z-40 w-full shadow-sm">
+    <div class="w-full px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-8">
+        <a href="#" onclick="switchTab('explore')" class="flex items-center space-x-2.5 font-extrabold text-stone-900 text-lg">
+          <div class="w-8 h-8 rounded-lg bg-brown-800 flex items-center justify-center text-white shadow-md">
+            <i data-lucide="calendar" class="w-5 h-5"></i>
+          </div>
+          <span>BookSpace<span class="text-brown-800">.io</span></span>
+        </a>
+        
+        <nav class="hidden md:flex items-center space-x-2 text-xs font-semibold text-stone-600">
+          <button onclick="switchTab('explore')" id="nav-explore" class="tab-btn text-brown-800 bg-brown-100 border border-brown-200 px-3.5 py-2 rounded-md font-bold">Facility Catalog</button>
+          
+          <!-- Customer Tab -->
+          <button onclick="switchTab('mybookings')" id="nav-mybookings" class="tab-btn hover:bg-brown-100 px-3.5 py-2 rounded-md flex items-center gap-1.5 text-stone-700">
+            <span>My Bookings</span>
+            <span id="customer-booking-badge" class="bg-brown-800 text-white px-1.5 py-0.5 text-[10px] font-bold rounded-full">2</span>
+          </button>
+
+          <!-- Owner Dashboard Tab (Visible for Owner Role) -->
+          <button onclick="switchTab('ownerhub')" id="nav-ownerhub" class="tab-btn hover:bg-brown-100 px-3.5 py-2 rounded-md flex items-center gap-1.5 text-brown-800 bg-brown-100/70 border border-brown-200">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-brown-800"></i>
+            <span>Owner Dashboard</span>
+            <span id="owner-pending-badge" class="bg-brown-800 text-white px-1.5 py-0.5 text-[10px] font-bold rounded-full">1</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Right Header Actions (Notifications & Profile) -->
+      <div class="flex items-center space-x-4">
+        <!-- Search Bar -->
+        <div class="relative hidden lg:block w-56">
+          <i data-lucide="search" class="w-4 h-4 text-brown-800 absolute left-3 top-2.5"></i>
+          <input type="text" id="globalSearch" onkeyup="filterResources()" placeholder="Search facilities..." 
+            class="w-full bg-brown-100/60 border border-brown-300 text-brown-900 font-semibold text-xs rounded-lg pl-9 pr-3 py-2 outline-none focus:bg-white focus:border-brown-800">
+        </div>
+
+        <!-- Notification Bell Dropdown -->
+        <div class="relative">
+          <button onclick="toggleNotifications()" class="relative p-2 text-brown-800 hover:text-stone-900 rounded-lg hover:bg-brown-100">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+            <span id="notif-badge-count" class="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white"></span>
+          </button>
+
+          <!-- Notifications Popup Menu -->
+          <div id="notifMenu" class="hidden absolute right-0 mt-2 w-80 bg-white border border-brown-200 rounded-xl shadow-xl z-50 p-3 text-xs space-y-2">
+            <div class="flex items-center justify-between border-b border-stone-100 pb-2">
+              <span class="font-bold text-stone-900">Notifications &amp; Entry Passes</span>
+              <button onclick="clearNotifications()" class="text-[10px] text-stone-400 hover:text-stone-600">Mark all read</button>
+            </div>
+            <div id="notifList" class="space-y-2 max-h-64 overflow-y-auto divide-y divide-stone-100">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Auth Section / User Role Profile -->
+        <div id="authNavSection" class="flex items-center space-x-2 text-xs">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Full-Width Screen Main Body -->
+  <main class="flex-grow w-full px-6 py-6 space-y-6">
+
+    <!-- Tab 1: Full-Screen Catalog -->
+    <div id="tab-explore" class="space-y-6 w-full">
+
+      <!-- Header Info & Filter Bar -->
+      <div class="bg-white border border-brown-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+        <div>
+          <h1 class="text-lg font-bold text-brown-900">Resource Catalog (16 Facilities in ₹ INR)</h1>
+          <p class="text-xs text-stone-500">Rich Chocolate Brown &amp; White Theme. Includes Conference Rooms, Media Studios, Event Venues, and Workstations.</p>
+        </div>
+
+        <!-- Top Dropdowns in Rich Chocolate Brown Theme with Real Vector UI Icons -->
+        <div class="flex flex-wrap items-center gap-3 text-xs font-medium">
+          <!-- Location Filter -->
+          <div class="relative flex items-center bg-brown-100 border-2 border-brown-300 rounded-lg px-3 py-1.5 focus-within:border-brown-800 focus-within:ring-2 focus-within:ring-brown-800/20 hover:border-brown-800 shadow-sm transition">
+            <i data-lucide="map-pin" class="w-4 h-4 text-brown-800 shrink-0 mr-2"></i>
+            <select id="buildingFilter" onchange="filterResources()" class="bg-transparent text-brown-900 font-bold outline-none cursor-pointer pr-5 appearance-none">
+              <option value="all">All Hyderabad Locations</option>
+              <option value="Hitec City">Hitec City &amp; Cyber Towers</option>
+              <option value="Raidurg">Raidurg &amp; T-Hub</option>
+              <option value="Madhapur">Madhapur &amp; Mindspace</option>
+              <option value="Gachibowli">Gachibowli &amp; Financial Dist.</option>
+              <option value="Jubilee Hills">Jubilee Hills (Road 36)</option>
+              <option value="Banjara Hills">Banjara Hills (Road 12/Annapurna)</option>
+              <option value="Kondapur">Kondapur &amp; Botanical</option>
+              <option value="Kukatpally">Kukatpally &amp; KPHB</option>
+              <option value="Somajiguda">Somajiguda / Begumpet</option>
+              <option value="Secunderabad">Secunderabad / Paradise</option>
+              <option value="HITEX">HITEX / Izzat Nagar</option>
+              <option value="Kokapet">Kokapet Neopolis</option>
+              <option value="Uppal">Uppal IT Corridor</option>
+            </select>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-brown-800 pointer-events-none absolute right-2.5"></i>
+          </div>
+
+          <!-- Category Filter -->
+          <div class="relative flex items-center bg-brown-100 border-2 border-brown-300 rounded-lg px-3 py-1.5 focus-within:border-brown-800 focus-within:ring-2 focus-within:ring-brown-800/20 hover:border-brown-800 shadow-sm transition">
+            <i data-lucide="layout-grid" class="w-4 h-4 text-brown-800 shrink-0 mr-2"></i>
+            <select id="categoryFilter" onchange="filterResources()" class="bg-transparent text-brown-900 font-bold outline-none cursor-pointer pr-5 appearance-none">
+              <option value="all">All Categories</option>
+              <option value="conference">Conference Rooms</option>
+              <option value="media">Media Studios</option>
+              <option value="event">Event Venues</option>
+              <option value="desk">Workstations &amp; Pods</option>
+            </select>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-brown-800 pointer-events-none absolute right-2.5"></i>
+          </div>
+
+          <!-- Status Filter -->
+          <div class="relative flex items-center bg-brown-100 border-2 border-brown-300 rounded-lg px-3 py-1.5 focus-within:border-brown-800 focus-within:ring-2 focus-within:ring-brown-800/20 hover:border-brown-800 shadow-sm transition">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4 text-brown-800 shrink-0 mr-2"></i>
+            <select id="statusFilter" onchange="filterResources()" class="bg-transparent text-brown-900 font-bold outline-none cursor-pointer pr-5 appearance-none">
+              <option value="all">All Statuses</option>
+              <option value="available">Available Now</option>
+              <option value="unavailable">Occupied / Reserved</option>
+            </select>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-brown-800 pointer-events-none absolute right-2.5"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Category Pills in Rich Brown with Real Vector Icons -->
+      <div class="flex flex-wrap items-center gap-2 text-xs font-bold">
+        <button onclick="setCategoryFilter('all')" class="cat-pill bg-brown-800 hover:bg-brown-900 text-white px-4 py-2 rounded-lg shadow-md flex items-center gap-1.5">
+          <i data-lucide="layers" class="w-4 h-4"></i> All Facilities (16)
+        </button>
+        <button onclick="setCategoryFilter('conference')" class="cat-pill bg-white border-2 border-brown-200 text-brown-900 hover:bg-brown-100 px-4 py-2 rounded-lg flex items-center gap-1.5 shadow-sm">
+          <i data-lucide="users" class="w-4 h-4 text-brown-800"></i> Conference Rooms (4)
+        </button>
+        <button onclick="setCategoryFilter('media')" class="cat-pill bg-white border-2 border-brown-200 text-brown-900 hover:bg-brown-100 px-4 py-2 rounded-lg flex items-center gap-1.5 shadow-sm">
+          <i data-lucide="video" class="w-4 h-4 text-brown-800"></i> Media Studios (4)
+        </button>
+        <button onclick="setCategoryFilter('event')" class="cat-pill bg-white border-2 border-brown-200 text-brown-900 hover:bg-brown-100 px-4 py-2 rounded-lg flex items-center gap-1.5 shadow-sm">
+          <i data-lucide="landmark" class="w-4 h-4 text-brown-800"></i> Event Venues (4)
+        </button>
+        <button onclick="setCategoryFilter('desk')" class="cat-pill bg-white border-2 border-brown-200 text-brown-900 hover:bg-brown-100 px-4 py-2 rounded-lg flex items-center gap-1.5 shadow-sm">
+          <i data-lucide="monitor" class="w-4 h-4 text-brown-800"></i> Workstations &amp; Pods (4)
+        </button>
+      </div>
+
+      <!-- Full-Width 4-Column Grid -->
+      <div id="resourceGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+        <!-- Generated by JS -->
+      </div>
+    </div>
+
+    <!-- Tab 2: Customer My Bookings & Entry Passes -->
+    <div id="tab-mybookings" class="hidden space-y-6 w-full">
+      <div class="bg-white border border-brown-200 rounded-xl p-6 shadow-sm space-y-4 w-full">
+        <div class="flex items-center justify-between border-b border-stone-100 pb-4">
+          <div>
+            <h2 class="text-lg font-bold text-brown-900 flex items-center gap-2">
+              <i data-lucide="ticket" class="w-5 h-5 text-brown-800"></i> Customer Reservations &amp; Entry Passes
+            </h2>
+            <p class="text-xs text-stone-500">Track pending owner approvals and view official entry passes for confirmed bookings</p>
+          </div>
+          <button onclick="openBookingModal()" class="bg-brown-800 hover:bg-brown-900 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-md">
+            + Reserve Space
+          </button>
+        </div>
+
+        <div id="myBookingsList" class="space-y-3">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Owner Approval Dashboard (Facility Manager View) -->
+    <div id="tab-ownerhub" class="hidden space-y-6 w-full">
+      <div class="bg-white border border-brown-200 rounded-xl p-6 shadow-sm space-y-4 w-full">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4">
+          <div>
+            <h2 class="text-lg font-bold text-brown-900 flex items-center gap-2">
+              <i data-lucide="shield-check" class="w-5 h-5 text-brown-800"></i> Facility Owner Approval Center
+            </h2>
+            <p class="text-xs text-stone-500">Review incoming customer booking requests. Once accepted or rejected, requests automatically disappear from this list.</p>
+          </div>
+          <div class="flex items-center space-x-2 text-xs">
+            <span class="bg-brown-100 text-brown-900 font-extrabold px-3 py-1 rounded-lg border border-brown-300">
+              Owner Mode Active
+            </span>
+          </div>
+        </div>
+
+        <!-- Pending Approval Table -->
+        <div class="overflow-x-auto w-full">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-brown-50 text-stone-600 uppercase text-[10px] border-b border-brown-200">
+                <th class="p-3">Customer / Host</th>
+                <th class="p-3">Facility Requested</th>
+                <th class="p-3">Event Purpose</th>
+                <th class="p-3">Date &amp; Time Slot</th>
+                <th class="p-3">Status</th>
+                <th class="p-3 text-right">Owner Action</th>
+              </tr>
+            </thead>
+            <tbody id="ownerApprovalList" class="divide-y divide-stone-100 text-stone-700">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Login Modal -->
+  <div id="loginModal" class="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white border border-brown-300 rounded-xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-xs">
+      <div class="flex items-center justify-between border-b border-stone-100 pb-3">
+        <h3 class="font-bold text-brown-900 text-base">Sign In to BookSpace</h3>
+        <button onclick="closeLoginModal()" class="text-stone-400 hover:text-stone-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-3">
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Select Account Type *</label>
+          <select id="loginRole" class="w-full bg-brown-100 border border-brown-300 rounded-lg p-2.5 text-brown-900 font-bold outline-none focus:border-brown-800">
+            <option value="customer">Customer / Guest Booker</option>
+            <option value="owner">Facility Owner / Venue Manager</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Username / Email *</label>
+          <input type="text" id="loginUsername" required placeholder="Enter username" class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-stone-900 outline-none focus:border-brown-800">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Password *</label>
+          <input type="password" id="loginPassword" required placeholder="Enter password" class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-stone-900 outline-none focus:border-brown-800">
+        </div>
+
+        <div class="bg-brown-50 p-2.5 rounded-lg border border-brown-200 text-[11px] space-y-1">
+          <div class="font-semibold text-brown-900">Quick Autofill Demo Accounts:</div>
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button type="button" onclick="autofillLogin('alex_customer', 'userpass123', 'customer')" class="bg-white border border-brown-300 px-2 py-1 rounded text-stone-800 hover:bg-brown-100 text-center font-medium">Customer: Alex</button>
+            <button type="button" onclick="autofillLogin('facility_owner', 'ownerpass123', 'owner')" class="bg-brown-100 border border-brown-300 px-2 py-1 rounded text-brown-900 hover:bg-brown-200 text-center font-bold">Owner: Manager</button>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-2.5 bg-brown-800 hover:bg-brown-900 text-white rounded-lg font-bold shadow-md">
+          Sign In
+        </button>
+
+        <p class="text-center text-stone-500 pt-1">
+          Don't have an account? <a href="#" onclick="switchToRegister()" class="text-brown-800 font-bold underline">Register now</a>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Registration Modal -->
+  <div id="registerModal" class="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white border border-brown-300 rounded-xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-xs">
+      <div class="flex items-center justify-between border-b border-stone-100 pb-3">
+        <h3 class="font-bold text-brown-900 text-base">Create an Account</h3>
+        <button onclick="closeRegisterModal()" class="text-stone-400 hover:text-stone-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <form id="registerForm" onsubmit="handleRegisterSubmit(event)" class="space-y-3">
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Register As *</label>
+          <select id="regRole" class="w-full bg-brown-100 border border-brown-300 rounded-lg p-2.5 text-brown-900 font-bold outline-none focus:border-brown-800">
+            <option value="customer">Customer (Book Facilities)</option>
+            <option value="owner">Facility Owner (Approve/Reject Bookings)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Full Name *</label>
+          <input type="text" id="regFullName" required placeholder="e.g. Ramya Sri" class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-stone-900 outline-none focus:border-brown-800">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Email Address *</label>
+          <input type="email" id="regEmail" required placeholder="you@example.com" class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-stone-900 outline-none focus:border-brown-800">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Username *</label>
+          <input type="text" id="regUsername" required placeholder="Choose username" class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-stone-900 outline-none focus:border-brown-800">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Password *</label>
+          <input type="password" id="regPassword" required placeholder="••••••••" class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-stone-900 outline-none focus:border-brown-800">
+        </div>
+
+        <button type="submit" class="w-full py-2.5 bg-brown-800 hover:bg-brown-900 text-white rounded-lg font-bold shadow-md">
+          Register &amp; Sign In
+        </button>
+
+        <p class="text-center text-stone-500 pt-1">
+          Already have an account? <a href="#" onclick="switchToLogin()" class="text-brown-800 font-bold underline">Sign in</a>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Official Entry Confirmation Pass Ticket Modal with REAL SCANNABLE MOBILE QR CODE! -->
+  <div id="passModal" class="fixed inset-0 bg-stone-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white border-2 border-emerald-600 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl space-y-0 text-xs">
+      <!-- Pass Header -->
+      <div class="bg-emerald-700 text-white p-5 text-center relative">
+        <div class="text-[10px] uppercase font-bold tracking-widest text-emerald-200">BookSpace Official Access Voucher</div>
+        <h3 class="text-xl font-black tracking-tight mt-1">VENUE ENTRY PASS</h3>
+        <div class="inline-flex items-center gap-1 bg-white/20 px-3 py-1 rounded-full text-[11px] font-bold mt-2">
+          <i data-lucide="check-circle" class="w-3.5 h-3.5 text-white"></i> CONFIRMED &amp; VERIFIED
+        </div>
+        <button onclick="closePassModal()" class="absolute top-3 right-3 bg-emerald-800 text-white rounded-full p-1 hover:bg-emerald-900">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Ticket Details -->
+      <div class="p-6 space-y-4 bg-brown-50">
+        <div class="bg-white p-4 rounded-xl border border-brown-200 shadow-sm space-y-3 font-mono">
+          <div class="flex justify-between border-b pb-2 text-[11px]">
+            <span class="text-stone-400">Pass Security ID:</span>
+            <span id="ticketPassId" class="font-extrabold text-brown-900">#PASS-8921-OK</span>
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-stone-400">Customer Host:</span>
+            <span id="ticketCustomer" class="font-bold text-stone-900">Alex Morgan</span>
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-stone-400">Approved Facility:</span>
+            <span id="ticketFacility" class="font-bold text-brown-800">Facility</span>
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-stone-400">Building / Hub:</span>
+            <span id="ticketBuilding" class="font-bold text-stone-900 flex items-center gap-1">
+              <i data-lucide="building-2" class="w-3.5 h-3.5 text-brown-800"></i>
+              <span id="ticketBuildingText">Cyber Towers (Hitec City)</span>
+            </span>
+          </div>
+          <div class="flex items-start justify-between text-xs pt-0.5">
+            <span class="text-stone-400 mt-1">Hyderabad Location:</span>
+            <div class="text-right max-w-[240px]">
+              <span id="ticketLocation" class="font-bold text-stone-800 flex items-center justify-end gap-1">
+                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-600 shrink-0"></i>
+                <span id="ticketLocationText">Cyber Towers, Floor 5, Hitec City, Hyderabad</span>
+              </span>
+              <a id="ticketMapBtn" href="#" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2 py-0.5 rounded-md mt-1 shadow-sm transition">
+                <i data-lucide="navigation" class="w-3 h-3 text-rose-600"></i> Open in Google Maps
+              </a>
+            </div>
+          </div>
+          <div class="flex justify-between text-xs border-t pt-2">
+            <span class="text-stone-400">Date &amp; Time:</span>
+            <span id="ticketTime" class="font-bold text-stone-900">Tomorrow 10:00 AM</span>
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-stone-400">Owner Approval:</span>
+            <span id="ticketOwnerApproval" class="font-bold text-emerald-700">Approved by Facility Owner</span>
+          </div>
+        </div>
+
+        <!-- REAL SCANNABLE QR CODE CONTAINER -->
+        <div class="bg-white border border-stone-200 rounded-xl p-4 text-center space-y-2.5">
+          <div id="passQrContainer" class="flex justify-center my-1">
+            <!-- Dynamically rendered real QR image -->
+          </div>
+          <p class="text-[11px] font-semibold text-emerald-800 flex items-center justify-center gap-1">
+            <i data-lucide="smartphone" class="w-3.5 h-3.5 text-emerald-600"></i> Real Scannable QR Code &mdash; Point your phone camera to verify!
+          </p>
+          
+          <!-- Interactive Map Button right under QR -->
+          <a id="ticketQrMapLink" href="#" target="_blank" class="w-full py-2.5 bg-gradient-to-r from-emerald-700 to-teal-800 hover:from-emerald-800 hover:to-teal-900 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-md transition hover:scale-[1.02] cursor-pointer">
+            <i data-lucide="map-pin" class="w-4 h-4 text-amber-300"></i>
+            <span>📍 Click to Open Venue on Google Maps (Hyderabad)</span>
+            <i data-lucide="external-link" class="w-3.5 h-3.5 text-white/80"></i>
+          </a>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button onclick="window.print()" class="w-full py-2.5 bg-brown-800 hover:bg-brown-900 text-white rounded-xl font-bold flex items-center justify-center gap-1.5 shadow-md">
+            <i data-lucide="printer" class="w-4 h-4"></i> Print Entry Pass
+          </button>
+          <button onclick="closePassModal()" class="w-full py-2.5 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded-xl font-bold">
+            Close Pass
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Facility Details Modal -->
+  <div id="detailsModal" class="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white border border-brown-300 rounded-xl max-w-xl w-full overflow-hidden shadow-2xl text-xs">
+      <div class="relative h-60 w-full">
+        <img id="detailImg" src="" class="w-full h-full object-cover" alt="Facility Photo">
+        <span id="detailStatusTag" class="absolute bottom-3 left-3 text-white text-[10px] font-bold px-2.5 py-1 rounded-md shadow">
+          Available Now
+        </span>
+        <button onclick="closeDetailsModal()" class="absolute top-3 right-3 bg-stone-900/70 text-white rounded-full p-1.5 hover:bg-stone-900">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 id="detailName" class="text-lg font-bold text-brown-900">Facility Name</h3>
+          <div class="flex items-center gap-2">
+            <span id="detailPrice" class="font-extrabold text-brown-800 text-sm">₹3,500/hr</span>
+            <span id="detailCat" class="bg-brown-100 text-brown-900 border border-brown-300 text-xs font-bold px-2.5 py-1 rounded-md">Category</span>
+          </div>
+        </div>
+
+        <p id="detailDesc" class="text-stone-600 text-xs leading-relaxed"></p>
+
+        <div class="grid grid-cols-3 gap-3 bg-brown-50 p-3 rounded-lg border border-brown-200 text-center text-stone-700">
+          <div>
+            <div class="text-[10px] text-stone-400 uppercase">Location</div>
+            <div id="detailLoc" class="font-bold text-xs mt-0.5">Location</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-stone-400 uppercase">Capacity</div>
+            <div id="detailCap" class="font-bold text-xs mt-0.5">Capacity</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-stone-400 uppercase">Buffer Gap</div>
+            <div id="detailBuf" class="font-bold text-xs mt-0.5">Buffer</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="font-bold text-brown-900 mb-1">Included Equipment &amp; Amenities:</div>
+          <div id="detailAmenities" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <div class="flex justify-end space-x-2 pt-3 border-t border-stone-100">
+          <button onclick="closeDetailsModal()" class="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-lg font-medium">Close</button>
+          <button id="detailBookBtn" onclick="" class="px-5 py-2 bg-brown-800 hover:bg-brown-900 text-white font-bold rounded-lg shadow-md">Request Booking (Requires Owner Approval)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer Booking Create Modal with Dynamic Slot Availability Checking in INR (₹)! -->
+  <div id="bookingModal" class="fixed inset-0 bg-stone-900/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white border border-brown-300 rounded-xl max-w-md w-full p-5 shadow-2xl space-y-4 text-xs">
+      <div class="flex items-center justify-between border-b border-stone-100 pb-3">
+        <div>
+          <h3 class="font-bold text-brown-900 text-sm">Submit Booking Request</h3>
+          <p class="text-[10px] text-stone-500">Pick date &amp; time slot. System checks slot availability instantly in INR (₹)!</p>
+        </div>
+        <button onclick="closeBookingModal()" class="text-stone-400 hover:text-stone-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <form id="bookingForm" onsubmit="handleBookingSubmit(event)" class="space-y-3">
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Select Facility *</label>
+          <select id="modalResourceSelect" onchange="checkTimeSlotAvailability()" required class="w-full bg-brown-100 border border-brown-300 rounded-lg p-2.5 text-brown-900 outline-none focus:border-brown-800 font-bold"></select>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Event / Studio Purpose *</label>
+          <input type="text" id="modalTitle" required placeholder="e.g. Q3 Strategy Review Meeting" class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-stone-900 outline-none focus:border-brown-800">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Start Time *</label>
+            <input type="datetime-local" id="modalStart" onchange="checkTimeSlotAvailability()" required class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-stone-900 outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">End Time *</label>
+            <input type="datetime-local" id="modalEnd" onchange="checkTimeSlotAvailability()" required class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-stone-900 outline-none">
+          </div>
+        </div>
+
+        <!-- Live Slot Availability Indicator Badge -->
+        <div id="slotAvailabilityBadge" class="p-2.5 rounded-lg border text-xs font-bold flex items-center justify-between bg-emerald-50 border-emerald-200 text-emerald-800">
+          <span id="slotStatusText" class="flex items-center gap-1.5">
+            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i> Available for this selected time slot!
+          </span>
+          <span id="estCost" class="font-extrabold text-brown-800">₹7,000</span>
+        </div>
+
+        <div class="grid grid-cols-1 gap-3">
+          <div>
+            <span class="text-[10px] text-stone-400 uppercase font-bold block mb-1">Attendees Count:</span>
+            <input type="number" id="modalAttendees" min="1" value="4" class="w-full bg-white border border-stone-300 rounded p-2 text-stone-900 outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Notes for Venue Owner</label>
+          <textarea id="modalDesc" rows="2" placeholder="Special equipment or setup requests for owner..." class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-stone-900 outline-none"></textarea>
+        </div>
+
+        <div id="modalError" class="hidden bg-rose-50 border border-rose-200 text-rose-600 p-2.5 rounded-lg text-xs font-semibold"></div>
+
+        <div class="flex justify-end space-x-2 pt-3 border-t border-stone-100">
+          <button type="button" onclick="closeBookingModal()" class="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-lg font-medium">Cancel</button>
+          <button type="submit" id="submitBookingBtn" class="px-5 py-2 bg-brown-800 hover:bg-brown-900 text-white rounded-lg font-bold shadow-md">Submit for Owner Approval</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // 16 Facilities with Prices in Indian Rupees (₹)!
+    let resources = [
+      { id: 1, slug: 'executive-boardroom-a', name: 'Executive Boardroom A', category: 'conference', categoryName: 'Conference', building: 'Cyber Towers (Hitec City)', location: 'Cyber Towers, Floor 5, Hitec City, Hyderabad', capacity: 16, buffer: 15, price: 3500, status: 'Available Now', isAvailable: true, statusClass: 'bg-emerald-700 text-white', amenities: ['4K Display', 'Video Conferencing', 'Whiteboard', 'Coffee Bar'], image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80', description: 'High-end meeting space with 4K display, video conferencing phone, and executive leather seating for 16.' },
+      { id: 2, slug: 'innovation-lab', name: 'Innovation Lab & Creative Hub', category: 'conference', categoryName: 'Conference', building: 'T-Hub 2.0 (Raidurg)', location: 'T-Hub Phase 2, Floor 4, Knowledge City, Raidurg, Hyderabad', capacity: 10, buffer: 15, price: 2800, status: 'Available Now', isAvailable: true, statusClass: 'bg-emerald-700 text-white', amenities: ['Smart Screen', 'Glass Whiteboards', 'High-speed Wi-Fi', 'Ergonomic Chairs'], image: 'https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&w=800&q=80', description: 'Flexible collaborative space with writable glass walls, dual smart displays, and breakout lounge.' },
+      { id: 3, slug: 'strategy-war-room', name: 'Agile Strategy War Room', category: 'conference', categoryName: 'Conference', building: 'Mindspace IT Park (Madhapur)', location: 'Building 12B, Mindspace IT Park, Madhapur, Hyderabad', capacity: 12, buffer: 15, price: 3200, status: 'Occupied until 2:00 PM', isAvailable: false, statusClass: 'bg-brown-800 text-white', amenities: ['Kanban Board', 'Interactive Screen', 'Post-it Station', 'Coffee Machine'], image: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=800&q=80', description: 'Sprint room currently in use for executive sprint review until 2:00 PM.' },
+      { id: 4, slug: 'executive-boardroom-b', name: 'Executive Boardroom B', category: 'conference', categoryName: 'Conference', building: 'WaveRock SEZ (Gachibowli)', location: 'WaveRock Tower 2, Financial District, Gachibowli, Hyderabad', capacity: 20, buffer: 20, price: 4500, status: 'Reserved Today', isAvailable: false, statusClass: 'bg-rose-700 text-white', amenities: ['Dual 85" Screens', 'Cisco TelePresence', 'Polycom Mic', 'Catering Counter'], image: 'https://images.unsplash.com/photo-1431540015161-0bf868a2d407?auto=format&fit=crop&w=800&q=80', description: 'Large enterprise boardroom fully reserved for investor relations meeting today.' },
+
+      { id: 5, slug: 'podcast-studio-b', name: 'Podcast & Audio Studio B', category: 'media', categoryName: 'Media Studio', building: 'Media Crest (Jubilee Hills)', location: 'Media Crest Complex, Road No. 36, Jubilee Hills, Hyderabad', capacity: 4, buffer: 30, price: 5000, status: 'Available Now', isAvailable: true, statusClass: 'bg-emerald-700 text-white', amenities: ['Acoustic Isolation', '4x Shure SM7B Mics', 'Rodecaster Console', 'Air Conditioning'], image: 'https://images.unsplash.com/photo-1590650516494-0c8e4a4dd67e?auto=format&fit=crop&w=800&q=80', description: 'Soundproofed acoustic booth equipped with 4 Shure SM7B mics, multi-track mixer, and studio lighting.' },
+      { id: 6, slug: 'video-shoot-stage-a', name: 'Video Shoot & Green Screen Stage', category: 'media', categoryName: 'Media Studio', building: 'Annapurna Studios (Banjara Hills)', location: 'Studio Floor 3, Annapurna Studios, Road No. 2, Banjara Hills, Hyderabad', capacity: 8, buffer: 45, price: 6800, status: 'In Production Shoot', isAvailable: false, statusClass: 'bg-brown-800 text-white', amenities: ['Green Screen Wall', '4K Cinema Cameras', 'Teleprompter', 'DMX Lighting Grid'], image: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=800&q=80', description: 'Video stage currently hosting a commercial brand photo shoot until 4:30 PM.' },
+      { id: 7, slug: 'photography-product-studio', name: 'Photography & Product Studio C', category: 'media', categoryName: 'Media Studio', building: 'Film Nagar Hub (Jubilee Hills)', location: 'Creative Media Hub, Cultural Complex, Film Nagar, Hyderabad', capacity: 6, buffer: 30, price: 4800, status: 'Under Maintenance', isAvailable: false, statusClass: 'bg-stone-700 text-white', amenities: ['Softbox Lighting', 'Seamless Paper Rolls', 'High-End Props', 'Styling Counter'], image: 'https://images.unsplash.com/photo-1520333789090-1afc82db536a?auto=format&fit=crop&w=800&q=80', description: 'Studio temporarily closed for lighting grid calibration and camera sensor cleaning.' },
+      { id: 8, slug: 'livestream-broadcasting-booth', name: 'Livestream & Broadcast Control Booth', category: 'media', categoryName: 'Media Studio', building: 'Sattva Knowledge City (Hitec City)', location: 'Octave Block, Sattva Knowledge City, Silpa Gram, Hitec City, Hyderabad', capacity: 3, buffer: 20, price: 4000, status: 'Available Now', isAvailable: true, statusClass: 'bg-emerald-700 text-white', amenities: ['Stream Deck', 'Dual-PC Streaming Rig', 'Fiber Ethernet', 'Multi-Cam Switcher'], image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80', description: 'Turnkey broadcasting booth for webinars, gaming streams, live product launches, and virtual keynotes.' },
+
+      { id: 9, slug: 'quiet-desk-105', name: 'Hot Desk #105 (Quiet Zone)', category: 'desk', categoryName: 'Workstation', building: 'Botanical Tech Center (Kondapur)', location: 'Botanical Garden Road, Floor 2, Kondapur, Hyderabad', capacity: 1, buffer: 0, price: 1200, status: 'Available Now', isAvailable: true, statusClass: 'bg-emerald-700 text-white', amenities: ['Dual 4K Monitors', 'Electric Standing Desk', 'Gigabit Ethernet'], image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80', description: 'Single-person ergonomic workstation with dual 27" 4K monitors and USB-C docking hub.' },
+      { id: 10, slug: 'quiet-desk-106', name: 'Hot Desk #106 (Developer Desk)', category: 'desk', categoryName: 'Workstation', building: 'Nexus Forum Arcade (Kukatpally)', location: 'Nexus Mall Arcade, Level 3, KPHB Colony, Kukatpally, Hyderabad', capacity: 1, buffer: 0, price: 1200, status: 'Occupied by Developer', isAvailable: false, statusClass: 'bg-brown-800 text-white', amenities: ['UltraWide 38" Monitor', 'Ergonomic Mesh Chair', 'Fast Wi-Fi 6E'], image: 'https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?auto=format&fit=crop&w=800&q=80', description: 'Currently checked out by engineering staff until end of day.' },
+      { id: 11, slug: 'video-conferencing-pod-3', name: 'Focus Pod #3 (Private Phone)', category: 'desk', categoryName: 'Workstation', building: 'Mayfair Complex (Somajiguda)', location: 'Mayfair Complex, Raj Bhavan Road, Somajiguda, Hyderabad', capacity: 2, buffer: 10, price: 1500, status: 'Available Now', isAvailable: true, statusClass: 'bg-emerald-700 text-white', amenities: ['Acoustic Door', 'HD Camera', 'Ring Light', 'Power Outlets'], image: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80', description: 'Private sound-isolated booth designed for confidential 1-on-1 video calls and interviews.' },
+      { id: 12, slug: 'video-conferencing-pod-4', name: 'Focus Pod #4 (Executive Suite)', category: 'desk', categoryName: 'Workstation', building: 'Manju Plaza (Secunderabad)', location: 'Manju Arcade, SD Road, Near Paradise Circle, Secunderabad', capacity: 2, buffer: 10, price: 2000, status: 'Cleaning / Sanitizing', isAvailable: false, statusClass: 'bg-stone-700 text-white', amenities: ['Active Noise Isolation', '4K Cam', 'Adjustable Lighting', 'HEPA Air Filter'], image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80', description: 'Undergoing routine HEPA ventilation cleaning and sanitizing.' },
+
+      { id: 13, slug: 'grand-auditorium', name: 'Grand Auditorium & Keynote Hall', category: 'event', categoryName: 'Event Venue', building: 'HITEX Trade Center (Izzat Nagar)', location: 'Trade Center Hall 1, HITEX Exhibition Center, Izzat Nagar, Hyderabad', capacity: 150, buffer: 60, price: 9500, status: 'Available Now', isAvailable: true, statusClass: 'bg-emerald-700 text-white', amenities: ['PA Sound System', 'Stage Lighting', 'Dual 4K Projectors', 'Green Room', 'VIP Seating'], image: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=800&q=80', description: 'Spacious event venue suitable for company all-hands, product launches, and developer keynotes.' },
+      { id: 14, slug: 'rooftop-terrace-lounge', name: 'Skyline Outdoor Event Terrace', category: 'event', categoryName: 'Event Venue', building: 'Neopolis Tower (Kokapet)', location: 'Skyline Tower 9, Neopolis SEZ, Kokapet, Hyderabad', capacity: 75, buffer: 45, price: 7500, status: 'Available Now', isAvailable: true, statusClass: 'bg-emerald-700 text-white', amenities: ['Outdoor Heaters', 'Bar Station', 'Surround Sound', 'Panoramic View'], image: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80', description: 'Scenic rooftop space ideal for evening team socials, networking mixers, and celebration dinners.' },
+      { id: 15, slug: 'glass-pavilion-banquet-hall', name: 'Glass Pavilion & Banquet Hall', category: 'event', categoryName: 'Event Venue', building: 'Royal Palms (Banjara Hills)', location: 'Royal Palms Estate, Road No. 12, Banjara Hills, Hyderabad', capacity: 100, buffer: 60, price: 8800, status: 'Booked for Gala', isAvailable: false, statusClass: 'bg-rose-700 text-white', amenities: ['Banquet Seating', 'Catering Kitchen', 'Ambient Lighting', 'Stage Setup'], image: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=800&q=80', description: 'Reserved for private evening awards ceremony gala.' },
+      { id: 16, slug: 'exhibition-workshop-gallery', name: 'Exhibition & Workshop Gallery', category: 'event', categoryName: 'Event Venue', building: 'DSL Abacus IT Park (Uppal)', location: 'DSL Abacus IT Park, Industrial Area, Uppal, Hyderabad', capacity: 60, buffer: 30, price: 6000, status: 'Available Now', isAvailable: true, statusClass: 'bg-emerald-700 text-white', amenities: ['Modular Partition Walls', 'Interactive Touch Screens', 'Workshop Tables', 'Buffet Setup'], image: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80', description: 'Open-plan gallery for hackathons, interactive workshops, art exhibitions, and pop-up events.' }
+    ];
+
+    // Seeded Bookings in Indian Rupees (₹)
+    let bookings = [
+      { 
+        id: 201, 
+        resourceId: 1, 
+        title: 'Q3 Executive Board Sync', 
+        user: 'Alex Morgan (Customer)', 
+        start: new Date(Date.now() + 3600000).toISOString(), 
+        end: new Date(Date.now() + 10800000).toISOString(),   
+        status: 'pending', 
+        attendees: 10, 
+        cost: '₹7,000', 
+        passId: 'PASS-8921-OK' 
+      },
+      { 
+        id: 202, 
+        resourceId: 5, 
+        title: 'Podcast Ep. 42 Audio Recording', 
+        user: 'Ramya Sri (Customer)', 
+        start: new Date(Date.now() + 172800000).toISOString(), 
+        end: new Date(Date.now() + 172800000 + 10800000).toISOString(), 
+        status: 'confirmed', 
+        attendees: 3, 
+        cost: '₹15,000', 
+        passId: 'PASS-4410-CONFIRMED' 
+      }
+    ];
+
+    let notifications = [
+      { id: 1, bookingId: 202, type: 'confirmed', title: 'Booking Confirmed!', message: 'Owner approved your Podcast Studio B booking. Click to open your Access Pass.', passId: 'PASS-4410-CONFIRMED', unread: true, time: '10 mins ago' }
+    ];
+
+    let currentUser = { username: 'Alex Morgan', role: 'customer', email: 'alex@booking.local' };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      renderAuthNav();
+      renderResources(resources);
+      renderMyBookings();
+      renderOwnerApprovals();
+      renderNotifications();
+      populateModalSelect();
+    });
+
+    function renderAuthNav() {
+      const sec = document.getElementById('authNavSection');
+      const ownerTabBtn = document.getElementById('nav-ownerhub');
+
+      if (currentUser) {
+        if (currentUser.role === 'owner') {
+          ownerTabBtn.classList.remove('hidden');
+        } else {
+          ownerTabBtn.classList.add('hidden');
+        }
+
+        sec.innerHTML = `
+          <div class="flex items-center space-x-3 bg-brown-100 border border-brown-300 rounded-lg px-2.5 py-1">
+            <span class="font-bold text-brown-900 flex items-center gap-1.5">
+              <i data-lucide="${currentUser.role === 'owner' ? 'shield-check' : 'user-check'}" class="w-3.5 h-3.5 ${currentUser.role === 'owner' ? 'text-brown-800' : 'text-emerald-700'}"></i>
+              ${currentUser.username} (${currentUser.role === 'owner' ? 'Owner' : 'Customer'})
+            </span>
+            <button onclick="handleLogout()" class="text-rose-600 hover:text-rose-800 font-semibold text-[11px] underline">Sign Out</button>
+          </div>
+        `;
+      } else {
+        ownerTabBtn.classList.add('hidden');
+        sec.innerHTML = `
+          <button onclick="openLoginModal()" class="px-3 py-1.5 bg-white border border-stone-300 hover:bg-stone-50 text-stone-800 rounded-lg font-semibold text-xs">Sign In</button>
+          <button onclick="openRegisterModal()" class="px-3 py-1.5 bg-brown-800 hover:bg-brown-900 text-white rounded-lg font-bold text-xs shadow-sm">Register</button>
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    function openLoginModal() {
+      document.getElementById('loginModal').classList.remove('hidden');
+    }
+    function closeLoginModal() {
+      document.getElementById('loginModal').classList.add('hidden');
+    }
+    function openRegisterModal() {
+      document.getElementById('registerModal').classList.remove('hidden');
+    }
+    function closeRegisterModal() {
+      document.getElementById('registerModal').classList.add('hidden');
+    }
+    function switchToRegister() {
+      closeLoginModal();
+      openRegisterModal();
+    }
+    function switchToLogin() {
+      closeRegisterModal();
+      openLoginModal();
+    }
+
+    function autofillLogin(user, pass, role) {
+      document.getElementById('loginUsername').value = user;
+      document.getElementById('loginPassword').value = pass;
+      document.getElementById('loginRole').value = role;
+    }
+
+    function handleLoginSubmit(e) {
+      e.preventDefault();
+      const u = document.getElementById('loginUsername').value;
+      const role = document.getElementById('loginRole').value;
+
+      currentUser = { username: u === 'facility_owner' ? 'Facility Manager' : u, role: role };
+      closeLoginModal();
+      renderAuthNav();
+      
+      if (role === 'owner') {
+        switchTab('ownerhub');
+        alert(`Signed in as Facility Owner! You can accept or reject customer bookings.`);
+      } else {
+        switchTab('mybookings');
+        alert(`Signed in as Customer! You can book facilities and receive confirmation passes.`);
+      }
+    }
+
+    function handleRegisterSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('regFullName').value;
+      const email = document.getElementById('regEmail').value;
+      const u = document.getElementById('regUsername').value;
+      const role = document.getElementById('regRole').value;
+
+      currentUser = { username: name || u, role: role, email: email };
+      closeRegisterModal();
+      renderAuthNav();
+
+      if (role === 'owner') {
+        switchTab('ownerhub');
+      } else {
+        switchTab('mybookings');
+      }
+    }
+
+    function handleLogout() {
+      currentUser = null;
+      renderAuthNav();
+      switchTab('explore');
+      alert('You have been signed out.');
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('text-brown-800', 'bg-brown-100', 'border', 'border-brown-200', 'font-bold'));
+      const active = document.getElementById(`nav-${tabId}`);
+      if (active) active.classList.add('text-brown-800', 'bg-brown-100', 'border', 'border-brown-200', 'font-bold');
+
+      ['explore', 'mybookings', 'ownerhub'].forEach(t => document.getElementById(`tab-${t}`).classList.add('hidden'));
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+      if (tabId === 'mybookings') renderMyBookings();
+      if (tabId === 'ownerhub') renderOwnerApprovals();
+    }
+
+    function setCategoryFilter(cat) {
+      document.getElementById('categoryFilter').value = cat;
+      filterResources();
+    }
+
+    function renderResources(list) {
+      const container = document.getElementById('resourceGrid');
+      if (list.length === 0) {
+        container.innerHTML = `<div class="col-span-full text-center text-stone-500 text-xs py-12">No matching facilities found.</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(r => `
+        <div class="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between group">
+          <div class="relative h-44 w-full cursor-pointer overflow-hidden" onclick="openDetailsModal(${r.id})">
+            <img src="${r.image}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${r.name}">
+            <span class="absolute top-2.5 right-2.5 bg-brown-900/90 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow">
+              ${r.categoryName}
+            </span>
+            <span class="absolute bottom-2.5 left-2.5 ${r.statusClass} text-[10px] font-bold px-2 py-0.5 rounded shadow flex items-center gap-1.5">
+              <i data-lucide="${r.isAvailable ? 'check-circle-2' : 'clock'}" class="w-3.5 h-3.5"></i> ${r.status}
+            </span>
+          </div>
+
+          <div class="p-4 flex-grow flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex items-center justify-between">
+                <h3 onclick="openDetailsModal(${r.id})" class="font-bold text-sm text-stone-900 hover:text-brown-800 cursor-pointer transition line-clamp-1">${r.name}</h3>
+                <span class="font-extrabold text-brown-800 text-xs">₹${r.price.toLocaleString('en-IN')}/hr</span>
+              </div>
+              <p class="text-[11px] text-stone-500 flex items-center gap-1 mt-1">
+                <i data-lucide="map-pin" class="w-3 h-3 text-brown-800"></i> ${r.location}
+              </p>
+              <p class="text-xs text-stone-600 mt-2 line-clamp-2">${r.description}</p>
+            </div>
+
+            <div class="space-y-2 pt-2 border-t border-stone-100 text-[11px]">
+              <div class="flex justify-between text-stone-500 font-medium">
+                <span>Cap: ${r.capacity} people</span>
+                <span>Buffer: ${r.buffer}m</span>
+              </div>
+              <div class="flex flex-wrap gap-1">
+                ${r.amenities.slice(0, 3).map(a => `<span class="bg-brown-100 text-brown-900 font-medium text-[10px] px-2 py-0.5 rounded">${a}</span>`).join('')}
+              </div>
+              <div class="grid grid-cols-2 gap-2 pt-1">
+                <button onclick="openDetailsModal(${r.id})" class="bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium py-1.5 rounded-lg text-xs">
+                  View Specs
+                </button>
+                <button onclick="quickBook(${r.id})" class="bg-brown-800 hover:bg-brown-900 text-white font-bold py-1.5 rounded-lg text-xs shadow-md">
+                  Request Booking
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    function filterResources() {
+      const q = (document.getElementById('globalSearch')?.value || '').toLowerCase();
+      const cat = document.getElementById('categoryFilter').value;
+      const bld = document.getElementById('buildingFilter').value;
+      const st = document.getElementById('statusFilter').value;
+
+      const filtered = resources.filter(r => {
+        const matchesQ = r.name.toLowerCase().includes(q) || r.location.toLowerCase().includes(q) || r.amenities.some(a => a.toLowerCase().includes(q));
+        const matchesCat = cat === 'all' || r.category === cat;
+        const matchesBld = bld === 'all' || r.building === bld || r.location.includes(bld);
+        
+        let matchesSt = true;
+        if (st === 'available') matchesSt = r.isAvailable === true;
+        if (st === 'unavailable') matchesSt = r.isAvailable === false;
+
+        return matchesQ && matchesCat && matchesBld && matchesSt;
+      });
+
+      renderResources(filtered);
+    }
+
+    function populateModalSelect() {
+      const select = document.getElementById('modalResourceSelect');
+      select.innerHTML = resources.map(r => `<option value="${r.id}">${r.name} (₹${r.price.toLocaleString('en-IN')}/hr - ${r.location})</option>`).join('');
+    }
+
+    function openDetailsModal(id) {
+      const r = resources.find(item => item.id === id);
+      if (!r) return;
+
+      document.getElementById('detailImg').src = r.image;
+      document.getElementById('detailName').textContent = r.name;
+      document.getElementById('detailCat').textContent = r.categoryName;
+      document.getElementById('detailPrice').textContent = `₹${r.price.toLocaleString('en-IN')}/hr`;
+      document.getElementById('detailDesc').textContent = r.description;
+      document.getElementById('detailLoc').textContent = r.location;
+      document.getElementById('detailCap').textContent = `${r.capacity} people`;
+      document.getElementById('detailBuf').textContent = `${r.buffer} mins`;
+      
+      const tag = document.getElementById('detailStatusTag');
+      tag.textContent = r.status;
+      tag.className = `absolute bottom-3 left-3 text-white text-[10px] font-bold px-2.5 py-1 rounded-md shadow ${r.statusClass}`;
+
+      document.getElementById('detailAmenities').innerHTML = r.amenities.map(a => `<span class="bg-brown-100 text-brown-900 border border-brown-300 text-xs font-semibold px-2.5 py-1 rounded-md">${a}</span>`).join('');
+      
+      const bookBtn = document.getElementById('detailBookBtn');
+      bookBtn.textContent = 'Request Booking (Requires Owner Approval)';
+      bookBtn.onclick = () => {
+        closeDetailsModal();
+        quickBook(r.id);
+      };
+
+      document.getElementById('detailsModal').classList.remove('hidden');
+    }
+
+    function closeDetailsModal() {
+      document.getElementById('detailsModal').classList.add('hidden');
+    }
+
+    function quickBook(id) {
+      if (!currentUser) { openLoginModal(); return; }
+      document.getElementById('modalResourceSelect').value = id;
+      openBookingModal();
+    }
+
+    // Dynamic Time Slot Availability Check Logic in Rupees (₹)!
+    function checkTimeSlotAvailability() {
+      const resId = parseInt(document.getElementById('modalResourceSelect').value);
+      const r = resources.find(item => item.id === resId);
+      const startVal = document.getElementById('modalStart').value;
+      const endVal = document.getElementById('modalEnd').value;
+
+      const badge = document.getElementById('slotAvailabilityBadge');
+      const statusText = document.getElementById('slotStatusText');
+      const costSpan = document.getElementById('estCost');
+      const submitBtn = document.getElementById('submitBookingBtn');
+      const errDiv = document.getElementById('modalError');
+
+      errDiv.classList.add('hidden');
+
+      if (!startVal || !endVal || !r) return;
+
+      const reqStart = new Date(startVal);
+      const reqEnd = new Date(endVal);
+
+      if (reqStart >= reqEnd) {
+        badge.className = "p-2.5 rounded-lg border text-xs font-bold flex items-center justify-between bg-rose-50 border-rose-200 text-rose-800";
+        statusText.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600"></i> End time must be after start time!`;
+        costSpan.textContent = "₹0";
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        lucide.createIcons();
+        return;
+      }
+
+      // Check if selected time overlaps with ANY existing confirmed or pending booking for this facility!
+      const overlapBooking = bookings.find(b => {
+        if (b.resourceId !== resId) return false;
+        if (b.status === 'rejected') return false; 
+        const bStart = new Date(b.start);
+        const bEnd = new Date(b.end);
+        return (reqStart < bEnd && reqEnd > bStart);
+      });
+
+      const hours = Math.max(1, Math.round((reqEnd - reqStart) / 3600000));
+      const totalCostNum = hours * r.price;
+      const totalCostStr = `₹${totalCostNum.toLocaleString('en-IN')}`;
+      costSpan.textContent = totalCostStr;
+
+      if (overlapBooking) {
+        // ALREADY BOOKED for this time slot!
+        const bookedTimeStr = `${new Date(overlapBooking.start).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${new Date(overlapBooking.end).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+        
+        badge.className = "p-2.5 rounded-lg border text-xs font-bold flex items-center justify-between bg-rose-50 border-rose-300 text-rose-800";
+        statusText.innerHTML = `<i data-lucide="x-circle" class="w-4 h-4 text-rose-600"></i> 🔴 ALREADY BOOKED for ${bookedTimeStr}! Pick another time.`;
+        
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        // AVAILABLE for this time slot!
+        badge.className = "p-2.5 rounded-lg border text-xs font-bold flex items-center justify-between bg-emerald-50 border-emerald-200 text-emerald-800";
+        statusText.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i> 🟢 AVAILABLE for this selected time slot!`;
+        
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+
+      lucide.createIcons();
+    }
+
+    function openBookingModal() {
+      if (!currentUser) { openLoginModal(); return; }
+      const now = new Date();
+      now.setHours(now.getHours() + 1, 0, 0, 0);
+      const end = new Date(now.getTime() + 3600000 * 2);
+      document.getElementById('modalStart').value = toLocalISO(now);
+      document.getElementById('modalEnd').value = toLocalISO(end);
+      
+      checkTimeSlotAvailability();
+      document.getElementById('bookingModal').classList.remove('hidden');
+    }
+
+    function closeBookingModal() {
+      document.getElementById('bookingModal').classList.add('hidden');
+      document.getElementById('modalError').classList.add('hidden');
+    }
+
+    function toLocalISO(d) {
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function handleBookingSubmit(e) {
+      e.preventDefault();
+      const resId = parseInt(document.getElementById('modalResourceSelect').value);
+      const r = resources.find(item => item.id === resId);
+      const title = document.getElementById('modalTitle').value;
+      const start = new Date(document.getElementById('modalStart').value);
+      const end = new Date(document.getElementById('modalEnd').value);
+
+      if (start >= end) {
+        document.getElementById('modalError').textContent = 'Start time must be before end time.';
+        document.getElementById('modalError').classList.remove('hidden');
+        return;
+      }
+
+      // Check overlap again before saving
+      const overlap = bookings.find(b => {
+        if (b.resourceId !== resId || b.status === 'rejected') return false;
+        return (start < new Date(b.end) && end > new Date(b.start));
+      });
+
+      if (overlap) {
+        document.getElementById('modalError').textContent = 'Error: This facility is already booked for the selected time slot. Please pick a different time.';
+        document.getElementById('modalError').classList.remove('hidden');
+        return;
+      }
+
+      const hours = Math.max(1, Math.round((end - start) / 3600000));
+      const totalCostNum = hours * (r ? r.price : 3500);
+      const totalCostStr = `₹${totalCostNum.toLocaleString('en-IN')}`;
+      const passId = `PASS-${Math.floor(1000 + Math.random() * 9000)}-CONFIRMED`;
+
+      const newBooking = {
+        id: Date.now(),
+        resourceId: resId,
+        title: title,
+        user: currentUser ? `${currentUser.username} (Customer)` : 'Alex Morgan (Customer)',
+        start: start.toISOString(),
+        end: end.toISOString(),
+        status: 'pending',
+        attendees: parseInt(document.getElementById('modalAttendees').value) || 1,
+        cost: totalCostStr,
+        passId: passId
+      };
+
+      // Add to active bookings array
+      bookings.unshift(newBooking);
+
+      // Dynamically update facility status if booked for right now
+      if (r) {
+        r.status = `Booked (${start.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})})`;
+        r.isAvailable = false;
+        r.statusClass = 'bg-brown-800 text-white';
+      }
+
+      closeBookingModal();
+      document.getElementById('bookingForm').reset();
+      
+      updateBadges();
+      renderResources(resources);
+      renderMyBookings();
+      renderOwnerApprovals();
+
+      alert(`Booking request submitted for ${totalCostStr}! Status: Pending Owner Approval.`);
+      switchTab('mybookings');
+    }
+
+    function ownerAcceptBooking(bookingId) {
+      const b = bookings.find(item => item.id === bookingId);
+      if (!b) return;
+
+      b.status = 'confirmed';
+      const r = resources.find(item => item.id === b.resourceId);
+
+      notifications.unshift({
+        id: Date.now(),
+        bookingId: b.id,
+        type: 'confirmed',
+        title: 'Booking Confirmed by Owner!',
+        message: `Owner approved your booking for ${r ? r.name : 'Facility'}. Click to view your entry pass.`,
+        passId: b.passId,
+        unread: true,
+        time: 'Just now'
+      });
+
+      updateBadges();
+      renderOwnerApprovals();
+      renderMyBookings();
+      renderNotifications();
+
+      alert(`You ACCEPTED the booking for "${b.title}". Confirmation pass has been dispatched to customer.`);
+    }
+
+    function ownerRejectBooking(bookingId) {
+      const b = bookings.find(item => item.id === bookingId);
+      if (!b) return;
+
+      b.status = 'rejected';
+      const r = resources.find(item => item.id === b.resourceId);
+
+      notifications.unshift({
+        id: Date.now(),
+        bookingId: b.id,
+        type: 'rejected',
+        title: 'Booking Cancelled by Owner',
+        message: `Owner rejected your booking request for ${r ? r.name : 'Facility'}.`,
+        passId: null,
+        unread: true,
+        time: 'Just now'
+      });
+
+      updateBadges();
+      renderOwnerApprovals();
+      renderMyBookings();
+      renderNotifications();
+
+      alert(`You REJECTED the booking for "${b.title}". Customer has been notified.`);
+    }
+
+    function updateBadges() {
+      const pendingCount = bookings.filter(b => b.status === 'pending').length;
+      document.getElementById('owner-pending-badge').textContent = pendingCount;
+      document.getElementById('customer-booking-badge').textContent = bookings.length;
+      
+      const unreadNotifs = notifications.filter(n => n.unread).length;
+      document.getElementById('notif-badge-count').style.display = unreadNotifs > 0 ? 'block' : 'none';
+    }
+
+    // Owner Approval Center: Shows ONLY PENDING requests! Once accepted or rejected, they disappear completely!
+    function renderOwnerApprovals() {
+      const container = document.getElementById('ownerApprovalList');
+      const pendingBookings = bookings.filter(b => b.status === 'pending');
+
+      if (pendingBookings.length === 0) {
+        container.innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center py-8 text-stone-500 font-medium">
+              <div class="flex flex-col items-center justify-center gap-1.5">
+                <i data-lucide="check-circle-2" class="w-6 h-6 text-emerald-600"></i>
+                <span>No pending booking requests to review. All requests processed!</span>
+              </div>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = pendingBookings.map(b => {
+        const r = resources.find(item => item.id === b.resourceId);
+        const startDate = new Date(b.start).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+        return `
+          <tr>
+            <td class="p-3 font-semibold text-stone-900">${b.user}</td>
+            <td class="p-3 font-medium text-stone-800">${r ? r.name : 'Facility'} <div class="text-[10px] text-stone-400">${r ? r.location : ''}</div></td>
+            <td class="p-3 text-stone-600">${b.title}</td>
+            <td class="p-3 font-mono text-[11px] text-stone-700">${startDate}</td>
+            <td class="p-3"><span class="bg-brown-100 text-brown-900 text-[10px] font-extrabold px-2.5 py-1 rounded-md border border-brown-300 inline-flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3 text-brown-800"></i> Pending Owner Approval</span></td>
+            <td class="p-3 text-right">
+              <div class="flex items-center justify-end space-x-2">
+                <button onclick="ownerAcceptBooking(${b.id})" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 shadow-sm">
+                  <i data-lucide="check" class="w-3.5 h-3.5"></i> Accept Booking
+                </button>
+                <button onclick="ownerRejectBooking(${b.id})" class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1">
+                  <i data-lucide="x" class="w-3.5 h-3.5"></i> Reject
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function renderMyBookings() {
+      const container = document.getElementById('myBookingsList');
+      if (bookings.length === 0) {
+        container.innerHTML = `<div class="text-center text-stone-500 py-6 text-xs">No active reservations.</div>`;
+        return;
+      }
+
+      container.innerHTML = bookings.map(b => {
+        const res = resources.find(r => r.id === b.resourceId);
+        const startDate = new Date(b.start).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+        let statusText = '';
+        let passAction = '';
+
+        if (b.status === 'pending') {
+          statusText = `<span class="bg-brown-100 text-brown-900 text-[10px] px-2.5 py-0.5 rounded font-extrabold border border-brown-300 inline-flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3 text-brown-800"></i> Awaiting Owner Approval</span>`;
+          passAction = `<span class="text-[11px] text-stone-400 italic">Pass generated after owner accepts</span>`;
+        } else if (b.status === 'confirmed') {
+          statusText = `<span class="bg-emerald-100 text-emerald-800 text-[10px] px-2.5 py-0.5 rounded font-bold border border-emerald-200 inline-flex items-center gap-1"><i data-lucide="check-circle-2" class="w-3 h-3 text-emerald-700"></i> Confirmed</span>`;
+          passAction = `
+            <button onclick="openPassModal('${b.passId}', '${res ? res.name : ''}', '${res ? res.location : ''}', '${res ? res.building : ''}', '${startDate}', '${b.user}')" 
+              class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="ticket" class="w-3.5 h-3.5"></i> View Entry Pass
+            </button>
+          `;
+        } else if (b.status === 'rejected') {
+          statusText = `<span class="bg-rose-100 text-rose-800 text-[10px] px-2.5 py-0.5 rounded font-bold border border-rose-200 inline-flex items-center gap-1"><i data-lucide="x-circle" class="w-3 h-3 text-rose-700"></i> Booking Rejected</span>`;
+          passAction = `<span class="text-[11px] text-rose-500 italic">Cancelled by Owner</span>`;
+        }
+
+        return `
+          <div class="bg-brown-50 border border-brown-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div class="font-bold text-stone-900 text-xs flex items-center gap-2">
+                ${b.title} ${statusText}
+              </div>
+              <div class="text-[11px] text-stone-600 mt-1 flex items-center gap-1.5 flex-wrap">
+                <strong>${res ? res.name : 'Facility'}</strong> &bull; <i data-lucide="building-2" class="w-3.5 h-3.5 text-brown-800 inline"></i> ${res ? res.building : ''} (${res ? res.location : ''}) &bull; ${startDate} &bull; ${b.attendees} attendees &bull; Fee: ${b.cost}
+              </div>
+            </div>
+            <div class="flex items-center space-x-2">
+              ${passAction}
+              <button onclick="cancelBooking(${b.id})" class="text-xs bg-white border border-stone-200 hover:border-rose-300 text-rose-600 font-medium px-3 py-1.5 rounded-lg">Cancel</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    // REAL SCANNABLE QR CODE GENERATOR FOR MOBILE PHONES WITH HYDERABAD GOOGLE MAPS LINK!
+    function openPassModal(passId, facilityName, location, building, dateStr, customerName) {
+      const pId = passId || '#PASS-8921-OK';
+      const fName = facilityName || 'Executive Boardroom A';
+      const bld = building || 'Cyber Towers (Hitec City)';
+      const loc = location || 'Cyber Towers, Floor 5, Hitec City, Hyderabad';
+      const dStr = dateStr || 'Tomorrow 10:00 AM';
+      const cName = customerName || 'Alex Morgan';
+
+      const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`;
+
+      document.getElementById('ticketPassId').textContent = pId;
+      document.getElementById('ticketFacility').textContent = fName;
+      if (document.getElementById('ticketBuildingText')) {
+        document.getElementById('ticketBuildingText').textContent = bld;
+      }
+      if (document.getElementById('ticketLocationText')) {
+        document.getElementById('ticketLocationText').textContent = loc;
+      }
+      if (document.getElementById('ticketMapBtn')) {
+        document.getElementById('ticketMapBtn').href = mapUrl;
+      }
+      if (document.getElementById('ticketQrMapLink')) {
+        document.getElementById('ticketQrMapLink').href = mapUrl;
+      }
+      document.getElementById('ticketTime').textContent = dStr;
+      document.getElementById('ticketCustomer').textContent = cName;
+      document.getElementById('ticketOwnerApproval').textContent = 'Approved by Facility Owner';
+
+      // Dynamic real QR Code image generation with Hyderabad Location & Direct Maps Navigation!
+      const qrText = `OFFICIAL ENTRY PASS VERIFIED ✅\nPass ID: ${pId}\nGuest: ${cName}\nFacility: ${fName}\nHub: ${bld}\nLocation: ${loc}\nGoogle Maps: ${mapUrl}\nStatus: APPROVED & VALID ENTRY`;
+      const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrText)}`;
+
+      const qrContainer = document.getElementById('passQrContainer');
+      if (qrContainer) {
+        qrContainer.innerHTML = `
+          <a href="${mapUrl}" target="_blank" title="Click to open venue on Google Maps" class="group relative block cursor-pointer">
+            <img src="${qrImgUrl}" alt="Real Scannable QR Pass" class="w-36 h-36 mx-auto rounded-lg border-2 border-brown-800 p-1.5 bg-white shadow-md group-hover:scale-105 group-hover:border-emerald-600 transition-all duration-200" />
+            <span class="absolute bottom-1 right-1/2 translate-x-1/2 bg-stone-900/80 text-white text-[9px] font-bold px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition shadow flex items-center gap-1 whitespace-nowrap">
+              <i data-lucide="map-pin" class="w-2.5 h-2.5 text-rose-400"></i> Open Map
+            </span>
+          </a>
+        `;
+      }
+
+      document.getElementById('passModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closePassModal() {
+      document.getElementById('passModal').classList.add('hidden');
+    }
+
+    function toggleNotifications() {
+      const menu = document.getElementById('notifMenu');
+      menu.classList.toggle('hidden');
+    }
+
+    function renderNotifications() {
+      const list = document.getElementById('notifList');
+      if (notifications.length === 0) {
+        list.innerHTML = `<div class="text-center text-stone-400 py-4 text-xs">No notifications.</div>`;
+        return;
+      }
+
+      list.innerHTML = notifications.map(n => `
+        <div onclick="clickNotification(${n.id})" class="p-2 hover:bg-brown-50 rounded-lg cursor-pointer space-y-1">
+          <div class="flex items-center justify-between font-bold ${n.type === 'confirmed' ? 'text-emerald-700' : 'text-rose-600'}">
+            <span>${n.title}</span>
+            <span class="text-[9px] text-stone-400 font-normal">${n.time}</span>
+          </div>
+          <div class="text-stone-600 text-[11px]">${n.message}</div>
+          ${n.passId ? `<div class="text-brown-800 font-bold text-[10px] flex items-center gap-1 mt-1">🎫 Tap to view Entry Pass</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    function clickNotification(notifId) {
+      const n = notifications.find(item => item.id === notifId);
+      if (!n) return;
+      n.unread = false;
+      updateBadges();
+      document.getElementById('notifMenu').classList.add('hidden');
+
+      if (n.passId) {
+        const b = bookings.find(item => item.id === n.bookingId);
+        const r = b ? resources.find(res => res.id === b.resourceId) : null;
+        openPassModal(n.passId, r ? r.name : 'Facility', r ? r.location : 'Main Complex', r ? r.building : 'Building A', 'Scheduled Date', b ? b.user : 'Alex Morgan');
+      } else {
+        switchTab('mybookings');
+      }
+    }
+
+    function clearNotifications() {
+      notifications.forEach(n => n.unread = false);
+      updateBadges();
+      renderNotifications();
+    }
+
+    function cancelBooking(id) {
+      if (confirm('Cancel this booking request?')) {
+        bookings = bookings.filter(b => b.id !== id);
+        updateBadges();
+        renderMyBookings();
+        renderOwnerApprovals();
+      }
+    }
+  </script>
+</body>
+</html>
